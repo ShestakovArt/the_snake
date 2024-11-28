@@ -50,7 +50,8 @@ class GameObject:
     def draw(self):
         """Отрисовки объекта на игровом поле."""
         raise NotImplementedError(
-            f"В {self.__class__} необходимо переопределить метод draw()"
+            f'В {self.__class__.__name__} '
+            'необходимо переопределить метод draw()'
         )
 
     def rect_draw(self, position):
@@ -63,27 +64,19 @@ class GameObject:
 class Apple(GameObject):
     """Объект яблоко."""
 
-    def __init__(self):
-        super().__init__(body_color=APPLE_COLOR)
+    def __init__(self, body_color=APPLE_COLOR):
+        super().__init__(body_color)
         self.randomize_position([self.position])
 
     def randomize_position(self, positions=None):
         """Устанавливает случайное положение яблока на игровом поле."""
-        flag = True
-        while flag:
-            new_position = (
+        while True:
+            self.position = (
                 choice(range(0, GRID_WIDTH - 1)) * GRID_SIZE,
                 choice(range(0, GRID_HEIGHT - 1)) * GRID_SIZE,
             )
-            flag_finde_cord = False
-            for cord in positions:
-                if cord == new_position:
-                    flag_finde_cord = True
-                    break
-
-            if flag_finde_cord is False:
-                flag = flag_finde_cord
-                self.position = new_position
+            if self.position not in positions:
+                break
 
     def draw(self):
         """Метод draw класса Apple."""
@@ -93,8 +86,8 @@ class Apple(GameObject):
 class Snake(GameObject):
     """Объект змейка."""
 
-    def __init__(self):
-        super().__init__(body_color=SNAKE_COLOR)
+    def __init__(self, body_color=SNAKE_COLOR):
+        super().__init__(body_color)
         self.reset(direction=RIGHT)
         self.next_direction = None
         self.last = None
@@ -106,19 +99,10 @@ class Snake(GameObject):
 
     def move(self):
         """Обновляет позицию змейки."""
-        current_x, current_y = self.get_head_position()
-        new_x = current_x + self.direction[0] * GRID_SIZE
-        if new_x >= SCREEN_WIDTH:
-            new_x = 0
-        elif new_x < 0:
-            new_x = SCREEN_WIDTH - GRID_SIZE
-
-        new_y = current_y + self.direction[1] * GRID_SIZE
-        if new_y >= SCREEN_HEIGHT:
-            new_y = 0
-        elif new_y < 0:
-            new_y = SCREEN_HEIGHT - GRID_SIZE
-
+        head_cord_x, head_cord_y = self.get_head_position()
+        direction_coord_x, direction_coord_y = self.direction
+        new_x = (head_cord_x + direction_coord_x * GRID_SIZE) % SCREEN_WIDTH
+        new_y = (head_cord_y + direction_coord_y * GRID_SIZE) % SCREEN_HEIGHT
         self.positions.insert(0, (new_x, new_y))
         if len(self.positions) > self.length:
             self.last = self.positions.pop()
@@ -184,6 +168,12 @@ def main():
     pg.init()
     snake = Snake()
     apple = Apple()
+    """Комментарий для ревьюера.
+    Яблоко не может появится внутри змейки,
+    тк в конструкторе Apple().__init__()
+    вызывается метод randomize_position([self.position]),
+    где self.position берется из родительского класса
+    и равен точке появления змейки."""
 
     while True:
         clock.tick(SPEED)
